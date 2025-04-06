@@ -22,6 +22,7 @@ probabilistic_db_project/
 │   ├── evaluator.py                   # Executes queries under independent/dependent model
 │   ├── possible_worlds.py             # Generates and evaluates possible worlds
 │   └── safety_checker.py              # Implements Find-Plan(q) algorithm
+│   └── optimize_performance.py              # Implements Find-Plan(q) algorithm
 │
 ├── models/
 │   └── dependent_case_bayesian_network.py  # Bayesian Network model for dependent mode

@@ -146,3 +146,50 @@ from query_engine.safety_checker import find_plan
 plan = find_plan(query, relation_keys)
 print(plan)
 
+
+
+# Re-import required modules after kernel reset
+import pandas as pd
+
+# Redefine simplified FIND-PLAN logic
+def find_plan(query_description, projection=None, join=False, filters=None, relation_keys=None):
+    if projection is None and not join:
+        return "SAFE"
+    if projection in relation_keys:
+        return "SAFE"
+    
+    # Define dependent attribute pairs
+    dependent_pairs = [('SalePrice', 'LotArea'), ('GrLivArea', 'SalePrice'), ('Neighborhood', 'SalePrice')]
+    
+    if filters and projection:
+        for attr in filters:
+            if (projection, attr) in dependent_pairs or (attr, projection) in dependent_pairs:
+                return "#P-complete"
+    
+    if join and filters:
+        for attr in filters:
+            if attr in ['SalePrice', 'LotArea', 'GrLivArea', 'Neighborhood']:
+                return "#P-complete"
+    
+    return "SAFE"
+
+# Simulate example queries
+queries = [
+    {"desc": "Selection only", "projection": None, "join": False, "filters": ['LotArea', 'SalePrice']},
+    {"desc": "Project LotArea where SalePrice < 150K", "projection": 'LotArea', "join": False, "filters": ['SalePrice']},
+    {"desc": "Project Neighborhood where YearBuilt > 1990", "projection": 'Neighborhood', "join": False, "filters": ['YearBuilt']},
+    {"desc": "Join with owners on Neighborhood where SalePrice > 250K", "projection": '*', "join": True, "filters": ['Neighborhood', 'SalePrice']},
+]
+
+# Assume primary key is Id
+relation_keys = ['Id']
+
+# Evaluate queries
+results = []
+for q in queries:
+    result = find_plan(q["desc"], projection=q["projection"], join=q["join"], filters=q["filters"], relation_keys=relation_keys)
+    results.append({"Query Description": q["desc"], "Safety Result": result})
+
+# Display the results
+df_safety_results = pd.DataFrame(results)
+import ace_tools as tools; tools.display_dataframe_to_user(name="Query Safety Analysis (FIND-PLAN)", dataframe=df_safety_results)

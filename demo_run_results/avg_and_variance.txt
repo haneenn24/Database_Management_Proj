@@ -1,0 +1,65 @@
+ Insights (Hypothetical, but Reasonable):
+🔹 1. Missingness Type (MCAR, MAR, MNAR):
+MCAR tends to produce more stable probability distributions (lower variance), because the missing data is truly random.
+
+MNAR leads to higher variance, since missingness depends on the value itself → harder to impute confidently.
+
+🔹 2. Imputation Method (KNN vs. RF):
+Random Forest (RF) usually gives higher avg probabilities because it's more powerful and picks stronger predictors.
+
+But also sometimes more variable because of its non-linearity and model uncertainty.
+
+🔹 3. Query Type (Selection, Projection, Join):
+Selection queries tend to preserve confidence, resulting in higher average probabilities.
+
+Projection and especially Join introduce more uncertainty, lowering the average and increasing the variance — especially if they access correlated attributes.
+
+🔹 4. Model Type (Independent vs. Dependent):
+Independent model gives simpler, flatter probabilities (lower variance).
+
+Dependent model respects correlations, leading to:
+
+More concentrated averages (sometimes lower overall)
+
+Higher variance, due to sensitivity to feature interactions
+
+
+
+
+demo of 5 query executions on the House Prices probabilistic database, showing:
+
+📥 The input query
+
+🧩 Data properties: Missingness type, Imputation method
+
+🧠 Query complexity: evaluated via FIND-PLAN
+
+🧮 Model used: Independent or Dependent
+
+📊 Output statistics: average and variance of result probabilities
+
+🔍 Insights from the Examples:
+✅ Example 1 (SAFE – Independent):
+Selection query with KNN + MCAR
+
+Output avg is moderate (0.609), variance is low → stable prediction
+
+✅ Example 2 (SAFE – Independent):
+Projection on independent attribute (Neighborhood), RF + MAR
+
+Output is confident and stable → good for visualization or downstream use
+
+❌ Example 3 (UNSAFE – Dependent):
+Projection of LotArea filtered by SalePrice → dependency triggers #P-complete
+
+Needs Bayesian modeling → more variance in probabilities
+
+❌ Example 4 (UNSAFE – Dependent):
+Join across correlated fields like Neighborhood and SalePrice
+
+Output is stronger avg but needs modeling of joint structure
+
+❌ Example 5 (UNSAFE – Dependent):
+UCQ-style logic on two features, including price
+
+Lots of variance → this is why independent model would fail

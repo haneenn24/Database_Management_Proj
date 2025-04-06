@@ -1,0 +1,202 @@
+## 🛡️ `FIND-PLAN(q)` Demo on House Prices Dataset
+
+We’ll apply the algorithm to 4 representative query types and evaluate whether they are **safe** or **#P-complete (unsafe)**.
+
+---
+
+### ⚙️ Reminder: Primary Key of `house_prices` = `Id`
+
+---
+
+### ✅ Example 1: **Selection with Conjunction**
+
+> **Query:** `SELECT * FROM house_prices WHERE LotArea > 8000 AND SalePrice < 200000;`
+
+- **Type:** Selection (σ) over numeric attributes
+- **No joins, no projections**
+- **Independent tuples**
+
+📌 **Safe** ✅  
+**Reason:** Query operates on a single relation with only filters; no dependency introduced.
+
+---
+
+### ❌ Example 2: **Projection on Dependent Attributes**
+
+> **Query:** `SELECT LotArea FROM house_prices WHERE SalePrice < 150000;`
+
+- **Type:** Projection (π) on `LotArea` — which is correlated with `SalePrice`
+- **Filtering on `SalePrice` → project `LotArea`**
+
+📌 **Unsafe** ❌  
+**Reason:** `LotArea` and `SalePrice` are **not independent** — projecting one based on the other’s filter introduces dependency.
+
+➡️ Must use **Bayesian network** or dependency-aware semantics.
+
+---
+
+### ✅ Example 3: **Projection on Independent Non-Key Attributes**
+
+> **Query:** `SELECT Neighborhood FROM house_prices WHERE YearBuilt > 1990;`
+
+- **Type:** Projection on categorical `Neighborhood`
+- **No join or shared variables**
+- `Neighborhood` is assumed independent of `YearBuilt` in this context.
+
+📌 **Safe** ✅  
+**Reason:** Projection is on an **independent non-key attribute** with a simple selection condition.
+
+---
+
+### ❌ Example 4: **Join Query with Shared Variable**
+
+> **Assume** another relation `owners(PID, Name, Neighborhood)`
+
+> **Query:**  
+```sql
+SELECT * FROM house_prices h JOIN owners o ON h.Neighborhood = o.Neighborhood
+WHERE h.SalePrice > 250000;
+```
+
+- **Type:** Join with condition on a shared attribute (`Neighborhood`)
+- **SalePrice** is potentially **dependent** on `Neighborhood`
+
+📌 **Unsafe** ❌  
+**Reason:** This join creates **dependencies across tables**, and the filter further entangles values → unsafe to evaluate by multiplying tuple probs.
+
+➡️ Use **Bayesian network** to capture `Neighborhood ↔ SalePrice ↔ Owner` links.
+
+---
+
+## 🧮 Summary: Safe vs. Unsafe Queries (House Prices DB)
+
+- ✅ Safe:
+  - Selections with no dependencies
+  - Projections on independent categorical attributes
+- ❌ Unsafe (`#P-complete`):
+  - Projections on correlated attributes
+  - Joins with shared variables involved in conditions
+  - Union of queries where tuples overlap with dependency
+
+---
+
+### 📘 Justification for Bayesian Network
+
+You **must use a Bayesian Network** if:
+- Queries **project dependent attributes**
+- There’s a **join** or **UCQ** involving dependent attributes (like `SalePrice` and `LotArea`)
+- You want to compute **true marginal probabilities** of query answers across possible worlds
+
+---
+🧠 Step-by-Step Simulation: Bayesian Network for a #P-Complete Query
+We'll use the following query as our example:
+
+sql
+Copy
+Edit
+SELECT LotArea FROM house_prices WHERE SalePrice < 150000;
+❗ Why is this query unsafe?
+You're filtering on SalePrice and projecting LotArea, which are correlated.
+
+The result of this query depends on the joint distribution of SalePrice and LotArea.
+
+So, we can't just multiply tuple probabilities — we must consider conditional dependencies.
+
+🔄 What Does the Bayesian Network Do?
+The BN models dependencies like:
+
+css
+Copy
+Edit
+[Neighborhood] → [SalePrice] → [LotArea]
+This means:
+Neighborhood influences SalePrice
+
+SalePrice influences LotArea
+
+So, to compute:
+
+𝑃
+(
+𝐿
+𝑜
+𝑡
+𝐴
+𝑟
+𝑒
+𝑎
+∣
+𝑆
+𝑎
+𝑙
+𝑒
+𝑃
+𝑟
+𝑖
+𝑐
+𝑒
+<
+150000
+)
+P(LotArea∣SalePrice<150000)
+We use Bayes Rule and the chain rule of probability:
+
+𝑃
+(
+𝐿
+𝑜
+𝑡
+𝐴
+𝑟
+𝑒
+𝑎
+∣
+𝑆
+𝑎
+𝑙
+𝑒
+𝑃
+𝑟
+𝑖
+𝑐
+𝑒
+<
+150
+𝐾
+)
+=
+Σ
+𝑃
+(
+𝐿
+𝑜
+𝑡
+𝐴
+𝑟
+𝑒
+𝑎
+∣
+𝑆
+𝑎
+𝑙
+𝑒
+𝑃
+𝑟
+𝑖
+𝑐
+𝑒
+)
+∗
+𝑃
+(
+𝑆
+𝑎
+𝑙
+𝑒
+𝑃
+𝑟
+𝑖
+𝑐
+𝑒
+)
+P(LotArea∣SalePrice<150K)=ΣP(LotArea∣SalePrice)∗P(SalePrice)
