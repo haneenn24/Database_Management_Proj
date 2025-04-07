@@ -1,4 +1,4 @@
-# dependent_model.py
+
 """
 This module implements the Dependent Probabilistic Model using a Bayesian Network.
 In this model, tuples are not assumed to be independent.
@@ -11,7 +11,6 @@ as computing general dependencies is NP-hard.
 """
 
 import pandas as pd
-import networkx as nx
 from pomegranate import BayesianNetwork, DiscreteDistribution, ConditionalProbabilityTable, Node
 
 
@@ -27,8 +26,6 @@ def build_bayesian_network(nodes_info, edges_info, cpts):
     Returns:
     - bn: pomegranate BayesianNetwork object
     """
-    from pomegranate import Node
-    
     node_objs = {}
     for node, values in nodes_info.items():
         if node not in cpts:
@@ -68,3 +65,43 @@ def evaluate_dependent_model(bn, evidence):
         if isinstance(dist, DiscreteDistribution):
             result[var.name] = dict(dist.items())
     return result
+
+
+def query_target_probability(bn, query_var, target_value, evidence):
+    """
+    Compute P(query_var = target_value | evidence)
+
+    Parameters:
+    - bn: BayesianNetwork object
+    - query_var: variable name you are querying
+    - target_value: value of the variable you want the probability for
+    - evidence: dict of known observed values
+
+    Returns:
+    - float: posterior probability
+    """
+    beliefs = bn.predict_proba(evidence)
+    for var, dist in zip(bn.states, beliefs):
+        if var.name == query_var and isinstance(dist, DiscreteDistribution):
+            return dist.probability(target_value)
+    return None
+
+
+def topk_query_results(bn, query_var, evidence, k=3):
+    """
+    Return top-k probable values of a query variable given evidence.
+
+    Parameters:
+    - bn: BayesianNetwork
+    - query_var: variable name
+    - evidence: dictionary of observed variables
+    - k: number of top values to return
+
+    Returns:
+    - list of (value, probability)
+    """
+    beliefs = bn.predict_proba(evidence)
+    for var, dist in zip(bn.states, beliefs):
+        if var.name == query_var and isinstance(dist, DiscreteDistribution):
+            return sorted(dist.items(), key=lambda x: -x[1])[:k]
+    return []

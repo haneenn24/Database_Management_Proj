@@ -37,3 +37,31 @@ def evaluate_independent_model(results_with_probs):
     rows = [list(k) + [v] for k, v in prob_map.items()]
     columns = [f"attr_{i}" for i in range(len(rows[0]) - 1)] + ["probability"]
     return pd.DataFrame(rows, columns=columns)
+
+def query_target_probability(results_df, target_row):
+    """
+    Return the probability of a specific result tuple.
+
+    Parameters:
+    - results_df: pd.DataFrame output from evaluate_independent_model
+    - target_row: list of attribute values (excluding probability)
+
+    Returns:
+    - float: probability value if found, else 0.0
+    """
+    query = tuple(target_row)
+    for _, row in results_df.iterrows():
+        if tuple(row[:-1]) == query:
+            return row['probability']
+    return 0.0
+
+def probability_of_any_match(results_df):
+    """
+    Compute the probability that at least one result tuple is true (OR logic).
+
+    P(any) = 1 - Π(1 - p_i)
+    """
+    complement_product = 1.0
+    for p in results_df['probability']:
+        complement_product *= (1 - p)
+    return 1 - complement_product

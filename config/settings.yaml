@@ -1,0 +1,99 @@
+# === Missing Data Types ===
+missing_data:
+  type: MCAR  # Options: MCAR, MAR, MNAR
+  percentage: 0.1  # Fraction of values to randomly remove
+
+# === Imputation Settings ===
+imputation:
+  methods:
+    - KNN
+    - RF
+  knn:
+    n_neighbors: 5
+    top_k: 3
+  rf:
+    n_estimators: 100
+    top_k: 3
+  mode: topk  # Options: fixed, topk
+
+# === Probabilistic Tuple Assignment ===
+tuple_probabilities:
+  mode: bayesian  # Options: uniform, bayesian
+  bayesian_net_file: "models/house_bn.json"
+  prior: uniform  # Used only if no prior is given in data
+
+# === Possible Worlds Generation ===
+possible_worlds:
+  strategies:
+    - KNN_fixed_uniform
+    - KNN_topk_uniform
+    - KNN_fixed_bayesian
+    - KNN_topk_bayesian
+    - RF_fixed_uniform
+    - RF_topk_uniform
+    - RF_fixed_bayesian
+    - RF_topk_bayesian
+  num_worlds: 5  # Number of worlds to sample (for top-k)
+
+# === Query Definitions ===
+queries:
+  operations:
+    - selection
+    - projection
+    - join
+    - union
+    - disjoint_projection
+  types:
+    - conjunctive
+    - ucq
+  examples:
+    Q1: "SELECT LotArea FROM house_prices WHERE SalePrice < 200000"
+    Q2: "SELECT Neighborhood FROM house_prices WHERE GrLivArea > 2000"
+    Q3: "SELECT LotArea FROM house_prices WHERE SalePrice < 150000"
+    Q4: "SELECT * FROM house_prices h JOIN owners o ON h.Neighborhood = o.Neighborhood WHERE h.SalePrice > 250000"
+    Q5: "SELECT GrLivArea, SalePrice FROM house_prices WHERE HouseStyle = '1Story' OR (HouseStyle = '2Story' AND SalePrice > 300000)"
+    Q6: "SELECT * FROM house_prices WHERE Street = 'Paved'"
+    Q7: "SELECT Neighborhood FROM house_prices WHERE OverallQual > 6 AND YearBuilt > 2000"
+    Q8: "SELECT * FROM house_prices WHERE MSZoning = 'RL' OR LotFrontage IS NULL"
+
+# === Safety Model Configuration ===
+query_evaluation:
+  model_decision:
+    use_find_plan: true
+  find_plan_logic:
+    primary_keys: ['Id']
+    dependent_pairs:
+      - [SalePrice, LotArea]
+      - [Neighborhood, SalePrice]
+      - [GrLivArea, SalePrice]
+  default_model: independent  # fallback
+  use_caching: true
+  use_monte_carlo_sampling: true
+  sampling:
+    num_samples: 300
+    seed: 42
+
+# === Evaluation & Metrics ===
+evaluation:
+  metrics:
+    - avg_probability
+    - std_deviation
+    - jaccard_similarity
+    - kl_divergence
+  runtime_tracking: true
+  cache_dir: cache/
+  results_dir: results/
+  figures_dir: figures/
+
+# === Logging & Output ===
+logging:
+  level: INFO
+  log_to_file: true
+  log_file: logs/project_run.log
+  enable_timestamp: true
+
+# === General Settings ===
+environment:
+  random_seed: 123
+  threads: 4
+  device: cpu  # or cuda

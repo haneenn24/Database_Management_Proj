@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np
 
-def initialize_prior_probabilities(df, low=0.7, high=0.9, seed=42):
+def assign_uniform_probabilities(df, low=0.7, high=0.9, seed=42):
     """
     Randomly assign a prior probability to each row from Uniform(low, high).
     """
@@ -37,7 +37,7 @@ def bayesian_update_probabilities(df, likelihood_missing=0.8):
     return df
 
 
-def assign_tuple_probabilities(df, evidence_column, event_column, prior_col='Prior_Prob', new_col='Posterior_Prob'):
+def assign_bayesian_probabilities(df, evidence_column, event_column, prior_col='Prior_Prob', new_col='Posterior_Prob'):
     """
     Assign or update probabilities of tuple existence using Bayes’ Theorem:
     P(T|E) = [P(E|T) * P(T)] / P(E)

@@ -12,9 +12,11 @@ probabilistic_db_project/
 │   └── input_dataset.csv              # Your input file (can be probabilistic or not)
 │
 ├── preprocessing/
-│   ├── imputer.py                     # Handles missing value imputation (KNN, RF)
+│   ├── custom_imputer.py              # Handles missing value imputation (KNN, RF)
+│   ├── custom_imputer_topk.py         # Handles missing value topk imputation (KNN, RF)
 │   ├── assign_probability.py          # Assigns or updates tuple probabilities
 │   ├── missingness_detector.py        # Classifies MCAR, MAR, MNAR patterns
+│   ├── remove_cells.py                # Remove MCAR, MAR, MNAR patterns
 │   └── utils.py                       # Shared helpers (e.g., data loading, logging)
 │
 ├── query_engine/
@@ -35,7 +37,6 @@ probabilistic_db_project/
 │   └── input_queries.py               # Step-by-step input queries with different operations
 │
 ├── output/
-│   └── results.json                   # Final query output with probabilities
 │   └── result_analysis.py             # Measures the total runtime and output quality
 │
 ├── run_pipeline.py                    # Main entry point
